@@ -1,0 +1,21 @@
+import numpy #not sure what to use this for yet but i think i need it
+import psignifit
+from pymatreader import read_mat
+
+# PC DATA_FOLDER = '/home/aflowers/Cloud/Vision Lab/Abigail/CuspExperiment/Data/'
+DATA_FOLDER = '/home/aflowers/Documents/Vision Lab/Cloud/Abigail/CuspExperiment/Data/'
+
+# testing reading from matlab!
+data = read_mat(DATA_FOLDER + 'pp1_1_time739753.667795185_cusp_results.mat')
+print(list(data.keys()))
+# ok this works - now how should i format this massive struct?
+
+# How does the psignifit PAS fit into this?
+
+# then do analysis as planned using psignifit
+# Hypothesis: Awareness is more important for detecting the hue correctly than for detecting the position of a stimulus.
+# - The PAS psychometric function will be better correlated with the psychometric functions tracking hue than tracking location - plot psychometric functions on same axes. Predict that PAS psychometric function correlates better with hue than location.
+# - Awareness will be better predictive of correct detection for the hue trials than for the location trials - logistic regression?
+# - Reporting colour awareness will be more predictive of hue detection than location detection - logistic regression?
+
+# Implementation: do this with one file at first, especially logistic regressions, then do the whole set when that works

@@ -1,0 +1,115 @@
+%% Specification: 
+% Hypothesis: Awareness is more important for detecting the hue correctly 
+% than for detecting the position of a stimulus.
+% - The PAS psychometric function will be better correlated with the 
+%   psychometric functions tracking hue than tracking location
+% - Awareness will be better predictive of correct detection for the hue 
+%   trials than for the location trials
+% - Reporting colour awareness will be more predictive of hue detection 
+%   than location detection
+% - For single trial stuff, compare values between 1 and 2 to check
+%   consistency
+% - Use a logistic regression for analysing awareness ratings in a 
+%   single trial - predictor ordinal with 4
+%   levels but binary outcome for awareness, binary for colour awareness
+% - Secondary question: Does awareness correlate with detection performance after you account
+% for stimulus intensity?
+% - Secondary question: Can do some level of individual differences e.g.
+% awareness being more important for some participants
+
+% Remember position is still linked to colour - just the chance of guessing
+% a coloured stimulus' position correctly
+
+DATA_LOCATION = "/home/aflowers/Documents/VisionLab/Cloud/Abigail/CuspExperiment/Data";
+
+resultFiles = getResults(DATA_LOCATION);
+% Just looking at one trial for now, figure out some way to average data
+% from two trials and put it into this 
+plotFromFile(resultFiles(1));
+
+
+function [dataFiles] = getResults(filePath)
+    rawFiles = dir(filePath);
+    dataFiles = rawFiles(contains({rawFiles.name},'.mat'));
+end
+
+function [] = plotFromFile(dataFile)
+    data = load(dataFile.folder + "/" + dataFile.name);
+    % For red
+    plotAwarenessGraph(data,1,false,"Awareness/Accuracy - Red, Colour Awareness"); 
+    plotAwarenessGraph(data,1,true, "Awareness/Accuracy - Red, Position Awareness");
+    % For teal
+    plotAwarenessGraph(data,2,false, "Awareness/Accuracy - Teal, Colour Awareness");
+    plotAwarenessGraph(data,2,true, "Awareness/Accuracy - Teal, Position Awareness");
+    % Etc. - finish this when it looks like it works.
+end
+
+function [] = plotAwarenessGraph(data,colourCode, isPosition, graphTitle)
+    awarenessTable = [
+     1 0 0 
+     2 0 0
+     3 0 0
+     4 0 0
+    ];
+    subResults = filterResults(data,colourCode, isPosition);
+    for i = 1:size(subResults(:,1))
+        currentAwareness = subResults(i,7);
+        isCorrect = false;
+        if (isPosition)
+            isCorrect = subResults(i,5);
+        else
+            isCorrect = subResults(i,4);
+        end
+        if (isCorrect)
+            previousTotal = awarenessTable(subResults(i,7),2);
+            awarenessTable(currentAwareness,2) = previousTotal + 1;
+        end
+        previousTotal = awarenessTable(currentAwareness,3);
+        awarenessTable(currentAwareness,3) = previousTotal + 1;
+    end
+    awareness = awarenessTable(:,1);
+    successes = awarenessTable(:,2);
+    attempts = awarenessTable(:,3);
+    % Plot starts here - I keep getting the subplots wrong, but the maths works
+    figure;
+    % Data dots - plotting awareness values against the fraction of correctrials
+    plot(awareness, successes ./ attempts, "kx")
+    hold
+    % Fitted line - based off modelfree tutorial
+    degpol = 1; % Degrees of the polynomial curve
+    numxfit = 999; % Number of points to be generated minus 1
+    % Not sure what this does yet
+    xfit = [min(awareness):(max(awareness)-min(awareness))/numxfit:max(awareness)]';
+    coefficients = binomfit_lims(successes, attempts, awareness, degpol,'logit');
+    pfit = binomval_lims(coefficients, xfit,'logit');
+    hold on, plot(xfit, pfit, getGraphColour(colourCode) + ":")
+    title(graphTitle)
+end
+
+function filteredResults = filterResults(data,colourCode, isPosition)
+    if isPosition
+        colourCode = colourCode + 5; 
+        % Silly trick to turn 1-10 into 1-5 and 1-5, I just think it's more
+        % intuitive but it's not necessary at all.
+    end
+    matchingItems = data.Results(:,2) == colourCode;
+    % This is apparently to get all the columns back now that we've
+    % filtered by one column, found on MATLAB answers
+    filteredResults = data.Results(matchingItems,:); 
+end
+
+% Get the closest MATLAB graph colour equivalent for the 5 colours
+function colour = getGraphColour(colourCode) 
+    switch (colourCode)
+        case 1
+            colour = "r";
+        case 2
+            colour = "b";
+        case 3
+            colour = "m";
+        case 4
+            colour = "g";
+        case 5
+            colour = "k";
+    end
+end
