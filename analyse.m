@@ -41,6 +41,15 @@ function [] = plotFromFile(dataFile)
     % For teal
     plotAwarenessGraph(data,2,false, "Awareness/Accuracy - Teal, Colour Awareness");
     plotAwarenessGraph(data,2,true, "Awareness/Accuracy - Teal, Position Awareness");
+     % For violet
+    plotAwarenessGraph(data,3,false, "Awareness/Accuracy - Violet, Colour Awareness");
+    plotAwarenessGraph(data,3,true, "Awareness/Accuracy - Violet, Position Awareness");
+     % For lime
+    plotAwarenessGraph(data,4,false, "Awareness/Accuracy - Lime, Colour Awareness");
+    plotAwarenessGraph(data,4,true, "Awareness/Accuracy - Lime, Position Awareness");
+     % For grey
+    plotAwarenessGraph(data,5,false, "Awareness/Accuracy - Grey, Colour Awareness");
+    plotAwarenessGraph(data,5,true, "Awareness/Accuracy - Grey, Position Awareness");
     % Etc. - finish this when it looks like it works.
 end
 
@@ -52,7 +61,9 @@ function [] = plotAwarenessGraph(data,colourCode, isPosition, graphTitle)
      4 0 0
     ];
     subResults = filterResults(data,colourCode, isPosition);
-    for i = 1:size(subResults(:,1))
+    % Go through colour-filtered results and sort the trials by awareness
+    % rating
+    for i = 1:size(subResults,1)
         currentAwareness = subResults(i,7);
         isCorrect = false;
         if (isPosition)
@@ -67,6 +78,18 @@ function [] = plotAwarenessGraph(data,colourCode, isPosition, graphTitle)
         previousTotal = awarenessTable(currentAwareness,3);
         awarenessTable(currentAwareness,3) = previousTotal + 1;
     end
+    % Remove any empty awareness brackets
+    rows = size(awarenessTable,1);
+    for i = 1:rows
+        % Less than check needed to account for new, smaller size
+        if i <= rows && awarenessTable(i,3) <= 0
+            awarenessTable(i,:) = [];
+            rows = rows - 1;
+        end
+    end
+    disp(graphTitle + ":")
+    disp("Awareness, Successes, Attempts")
+    disp(awarenessTable)
     awareness = awarenessTable(:,1);
     successes = awarenessTable(:,2);
     attempts = awarenessTable(:,3);
@@ -81,6 +104,8 @@ function [] = plotAwarenessGraph(data,colourCode, isPosition, graphTitle)
     % Not sure what this does yet
     xfit = [min(awareness):(max(awareness)-min(awareness))/numxfit:max(awareness)]';
     coefficients = binomfit_lims(successes, attempts, awareness, degpol,'logit');
+    disp("Coefficients for best fit:")
+    disp(coefficients)
     pfit = binomval_lims(coefficients, xfit,'logit');
     hold on, plot(xfit, pfit, getGraphColour(colourCode) + ":")
     title(graphTitle)

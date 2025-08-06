@@ -41,6 +41,15 @@ function [] = plotFromFile(dataFile)
     % For teal
     plotAwarenessGraph(data,2,false, "Awareness/Accuracy - Teal, Colour Awareness");
     plotAwarenessGraph(data,2,true, "Awareness/Accuracy - Teal, Position Awareness");
+     % For violet
+    plotAwarenessGraph(data,3,false, "Awareness/Accuracy - Violet, Colour Awareness");
+    plotAwarenessGraph(data,3,true, "Awareness/Accuracy - Violet, Position Awareness");
+     % For lime
+    plotAwarenessGraph(data,4,false, "Awareness/Accuracy - Lime, Colour Awareness");
+    plotAwarenessGraph(data,4,true, "Awareness/Accuracy - Lime, Position Awareness");
+     % For grey
+    plotAwarenessGraph(data,5,false, "Awareness/Accuracy - Grey, Colour Awareness");
+    plotAwarenessGraph(data,5,true, "Awareness/Accuracy - Grey, Position Awareness");
     % Etc. - finish this when it looks like it works.
 end
 
@@ -52,6 +61,8 @@ function [] = plotAwarenessGraph(data,colourCode, isPosition, graphTitle)
      4 0 0
     ];
     subResults = filterResults(data,colourCode, isPosition);
+    % Go through colour-filtered results and sort the trials by awareness
+    % rating
     for i = 1:size(subResults(:,1))
         currentAwareness = subResults(i,7);
         isCorrect = false;
@@ -67,23 +78,37 @@ function [] = plotAwarenessGraph(data,colourCode, isPosition, graphTitle)
         previousTotal = awarenessTable(currentAwareness,3);
         awarenessTable(currentAwareness,3) = previousTotal + 1;
     end
+    % Remove any empty awareness brackets - prevents error in
+    % binomfit_lims
+    skipCounter = 0; 
+    for i = 1:size(awarenessTable(:,1))
+        if awarenessTable(i,3) <= 0
+            awarenessTable(i,:) = [];
+            i = i-1;
+        end
+    end
+    disp(graphTitle + ":")
+    disp("Awareness, Successes, Attempts")
+    disp(awarenessTable)
     awareness = awarenessTable(:,1);
     successes = awarenessTable(:,2);
     attempts = awarenessTable(:,3);
-    % Starting the plot - getting an error about axes
-    figure(colourCode)
-    title(graphTitle)
+    % Plot starts here - I keep getting the subplots wrong, but the maths works
+    figure;
     % Data dots - plotting awareness values against the fraction of correctrials
-    plot(awareness, successes ./ attempts, ".","black")
-    %axis([0.05 1.35 -0.02 1]); % change these values
-    %axis square;
-    % Curve - copied this next bit from the tutorial - need to work out what it does!
+    plot(awareness, successes ./ attempts, "kx")
+    hold
+    % Fitted line - based off modelfree tutorial
     degpol = 1; % Degrees of the polynomial curve
     numxfit = 999; % Number of points to be generated minus 1
-    xfit = [min(awareness):(max(awareness)-min(awareness))/numxfit:max(awareness)]'; % Frankly just copied this.
+    % Not sure what this does yet
+    xfit = [min(awareness):(max(awareness)-min(awareness))/numxfit:max(awareness)]';
     coefficients = binomfit_lims(successes, attempts, awareness, degpol,'logit');
+    disp("Coefficients for best fit:")
+    disp(coefficients)
     pfit = binomval_lims(coefficients, xfit,'logit');
-    hold on, plot(xfit, pfit, "b.")
+    hold on, plot(xfit, pfit, getGraphColour(colourCode) + ":")
+    title(graphTitle)
 end
 
 function filteredResults = filterResults(data,colourCode, isPosition)
@@ -93,15 +118,23 @@ function filteredResults = filterResults(data,colourCode, isPosition)
         % intuitive but it's not necessary at all.
     end
     matchingItems = data.Results(:,2) == colourCode;
-    % This bit makes no sense, I just found it on MATLAB Answers...
+    % This is apparently to get all the columns back now that we've
+    % filtered by one column, found on MATLAB answers
     filteredResults = data.Results(matchingItems,:); 
 end
 
-function colour = getColour(colourCode) 
+% Get the closest MATLAB graph colour equivalent for the 5 colours
+function colour = getGraphColour(colourCode) 
     switch (colourCode)
         case 1
-            colour = "red";
+            colour = "r";
         case 2
-            colour = "teal";
+            colour = "b";
         case 3
+            colour = "m";
+        case 4
+            colour = "g";
+        case 5
+            colour = "k";
+    end
 end
